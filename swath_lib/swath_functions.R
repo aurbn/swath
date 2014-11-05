@@ -1,0 +1,32 @@
+#
+wd <- getwd()
+
+setwd('~/swath/')
+
+require(data.table, quietly=TRUE)
+require(reshape2, quietly=TRUE)
+require(fpc, quietly=TRUE)
+
+source('measure_and_rep_levels.R')
+source('suppl_functions.R')
+source('collect_data.R')
+source('threshold_measurements.R')
+source('threshold_measurements_aliases.R')
+source('complete_measurements.R')
+source('complete_measurements_aliases.R')
+source('min_measurements.R')
+source('min_measurements_aliases.R')
+source('cluster_measurements.R')
+source('normalize.R')
+source('normalize_aliases.R')
+source('produce_stat.R')
+source('produce_stat_aliases.R')
+source('select_modifications.R')
+source('rank_groups.R')
+source('rank_groups_aliases.R')
+source('score.R')
+source('score_aliases.R')
+source('clustering_results.R')
+
+setwd(wd)
+rm(wd)

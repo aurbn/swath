@@ -143,12 +143,13 @@ data<-data[fragments]
 setkey(data, fragment_id, run_id)
 
 rm(list= c('fragments', 'loaded.samples'))
-
 if(!is.null(unique.file)){
   uniq <- fread(input= unique.file, sep= '\t', header= TRUE, showProgress= FALSE)
-  #setnames(uniq, c('ProteinName', 'NoModSeq'), c('protein_id', 'clean_peptide_sequence'))
+  if (!not_from_mv){
+     setnames(uniq, c('ProteinName', 'NoModSeq'), c('protein_id', 'clean_peptide_sequence'))
+     uniq[, clean_peptide_id:= paste0(protein_id, '_', clean_peptide_sequence)]
+  }
   setkey(uniq)
-  #uniq[, clean_peptide_id:= paste0(protein_id, '_', clean_peptide_sequence)]
   uniq <- unique(uniq[, clean_peptide_id])
   setkey(data, clean_peptide_id)
   data$uniq <- data[, clean_peptide_id] %in% uniq
@@ -156,9 +157,12 @@ if(!is.null(unique.file)){
 
 if(!is.null(tryptic.file)){
   tryptic <- fread(input= tryptic.file, sep= '\t', header= TRUE, showProgress= FALSE)
-  #setnames(tryptic, c('ProteinName', 'NoModSeq'), c('protein_id', 'clean_peptide_sequence'))
+  if(!not_from_mv){
+    setnames(tryptic, c('ProteinName', 'NoModSeq'), c('protein_id', 'clean_peptide_sequence'))
+    
+    tryptic[, clean_peptide_id:= paste0(protein_id, '_', clean_peptide_sequence)]
+  }
   setkey(tryptic)
-  #tryptic[, clean_peptide_id:= paste0(protein_id, '_', clean_peptide_sequence)]
   tryptic <- unique(tryptic[, clean_peptide_id])
   setkey(data, clean_peptide_id)
   data$tryptic <- data[, clean_peptide_id] %in% tryptic

@@ -1,13 +1,13 @@
 #
 rm(list= ls())
-setwd("~/swath/mycoplasma_revamped/")
+#setwd("~/swath/mycoplasma_revamped/")
 
-source('~/swath/swath/swath_functions.R')
+source('./swath_lib/swath_functions.R')
 
-source('settings_mycoplasma_revamped.R')
-setwd(home)
+source('./settings.R')
+#setwd(home)
 
-data <- collect_data(data.directory= data.path, sample.description.file= samples.path, unique.file= unique.path, tryptic.file= tryptic.path, output.file= aggregated.path, not_from_mv= not_from_mv, return.table= TRUE, write.file= TRUE)
+data <- collect_data(data.directory= data.path, sample.description.file= samples.path, unique.file= unique.path, tryptic.file= tryptic.path, output.file= aggregated.path, not_from_mv= not_from_mv, return.table= TRUE, write.file= FALSE)
 #data <- dt.read(aggregated.path)
 
 setkey(data, fragment_id, run_id)
@@ -148,12 +148,12 @@ select_outcome <- function(x){
 
 clustering[, frg_outcome:= select_outcome(unique(.SD)), by= fragment_id, .SDcols=c('complete', 'cluster')]
 
-pdf('results/clustering_results.pdf')
-for(precursor in unique(clustering[, precursor_id])){
-  print(clustering_results(data= clustering, measure.id= 'fragment_id', group.id= 'precursor_id', value.var= 'intensity', rep.id= 'tech_id', flag= 'frg_outcome',target= precursor, normalize= TRUE, log= TRUE))
-}
-rm(precursor)
-dev.off()
+# pdf('results/clustering_results.pdf')
+# for(precursor in unique(clustering[, precursor_id])){
+#   print(clustering_results(data= clustering, measure.id= 'fragment_id', group.id= 'precursor_id', value.var= 'intensity', rep.id= 'tech_id', flag= 'frg_outcome',target= precursor, normalize= TRUE, log= TRUE))
+# }
+# rm(precursor)
+# dev.off()
 
 rank_fun_sum_int <- function(data){
   if(!is.data.table(data)){

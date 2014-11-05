@@ -1,5 +1,5 @@
 #
-home <- '~/mycoplasma_revamped/'
+home <- '.'
 data.directory <- 'data/'
 data.files <- 'swathdata/'
 libs.directory <- 'libs/'

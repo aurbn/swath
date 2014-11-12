@@ -7,13 +7,30 @@ source('./swath_lib/swath_functions.R')
 source('./settings.R')
 #setwd(home)
 
-data <- collect_data(data.directory= data.path, sample.description.file= samples.path, unique.file= unique.path, tryptic.file= tryptic.path, output.file= aggregated.path, not_from_mv= not_from_mv, return.table= TRUE, write.file= FALSE)
+data <- collect_data(data.directory= data.path,
+                     sample.description.file= samples.path, 
+                     unique.file= unique.path, 
+                     tryptic.file= tryptic.path, 
+                     output.file= aggregated.path, 
+                     not_from_mv= not_from_mv, 
+                     return.table= TRUE, 
+                     write.file= FALSE)
 #data <- dt.read(aggregated.path)
 
 setkey(data, fragment_id, run_id)
 
 ##Only intensity > 0 (??) 
-data <- threshold.measurements(data= data, data.file= NULL, flag= TRUE, flag.name= 'above_zero', measure.id= 'fragment_id', value.var= 'intensity', threshold= 0, direction= 'lower', include= TRUE, output.file= NULL, return.table= TRUE, write.file= FALSE)
+data <- threshold.measurements(data= data,
+                               data.file= NULL, 
+                               flag= TRUE, flag.name= 'above_zero',
+                               measure.id= 'fragment_id', 
+                               value.var= 'intensity', 
+                               threshold= 0, 
+                               direction= 'lower', 
+                               include= TRUE,
+                               output.file= NULL,
+                               return.table= TRUE, 
+                               write.file= FALSE)
 
 setkey(data, fragment_id, run_id)
 
@@ -24,7 +41,15 @@ setkey(tmp, fragment_id, run_id)
 ## run_id tech_id
 
 ## Fragments detected in all runs
-complete <- complete.measurements(data= tmp, flag= FALSE, flag.name= NULL, measure.id= 'fragment_id', rep.id= 'run_id', output.file= NULL, data.file= NULL, return.table= TRUE, write.file= FALSE)
+complete <- complete.measurements(data= tmp, 
+                                  flag= FALSE,
+                                  flag.name= NULL,
+                                  measure.id= 'fragment_id', 
+                                  rep.id= 'run_id',
+                                  output.file= NULL,
+                                  data.file= NULL,
+                                  return.table= TRUE,
+                                  write.file= FALSE)
 setkey(complete, fragment_id)
 complete <- unique(complete[, fragment_id])
 setkey(data, fragment_id)
@@ -37,7 +62,17 @@ tmp <- unique(data[above_zero==TRUE&complete==TRUE, list(fragment_id, precursor_
 setkey(tmp, fragment_id, precursor_id)
 
 ## Keep only precursors with more or equal then 'min' fragments
-min_frg <- min.measurements(data= tmp, data.file= NULL, flag= FALSE, flag.name= NULL, min= 3, measure.id= 'fragment_id', group.id= 'precursor_id', output.file= NULL, return.table= TRUE, write.file= FALSE)
+min_frg <- min.measurements(data= tmp,
+                            data.file= NULL, 
+                            flag= FALSE, 
+                            flag.name= NULL, 
+                            min= 3, 
+                            measure.id= 'fragment_id',
+                            group.id= 'precursor_id', 
+                            output.file= NULL, 
+                            return.table= TRUE, 
+                            write.file= FALSE)
+
 setkey(min_frg, precursor_id)
 min_frg <- unique(min_frg[, precursor_id])
 data$min_frg <- data[, precursor_id] %in% min_frg #slow
@@ -52,19 +87,52 @@ tmp <- unique(data[complete==TRUE&min_frg==TRUE&above_zero==TRUE, list(fragment_
 setkey(tmp, fragment_id, run_id, tech_id)
 
 ##?? Normalization (Good)
-coef_run_preclust <- normalize(data= tmp, measure.id= 'fragment_id', value.var= 'intensity', rep.id= 'run_id', group.id= 'tech_id', data.file= NULL, coef.file= NULL, output.file= NULL, return.table= FALSE, return.coef= TRUE, write.file= FALSE, output.coef= preclust.ms.coef.path, write.coef= TRUE, coef= NULL)
+coef_run_preclust <- normalize(data= tmp, 
+                               measure.id= 'fragment_id', 
+                               value.var= 'intensity', 
+                               rep.id= 'run_id',
+                               group.id= 'tech_id', 
+                               data.file= NULL, 
+                               coef.file= NULL,
+                               output.file= NULL, 
+                               return.table= FALSE, 
+                               return.coef= TRUE, 
+                               write.file= FALSE, 
+                               output.coef= preclust.ms.coef.path, 
+                               write.coef= TRUE, 
+                               coef= NULL)
 setkey(coef_run_preclust, tech_id, run_id)
 
 ##?? Normalization (All)
-preclust_data <- normalize(data= data, measure.id= 'fragment_id', value.var= 'intensity', rep.id= 'run_id', group.id= 'tech_id', data.file= NULL, coef.file= NULL, output.file= NULL, return.table= TRUE, return.coef= FALSE, write.file= FALSE, output.coef= NULL, write.coef= FALSE, coef= coef_run_preclust)
+preclust_data <- normalize(data= data,
+                           measure.id= 'fragment_id',
+                           value.var= 'intensity', 
+                           rep.id= 'run_id',
+                           group.id= 'tech_id',
+                           data.file= NULL, 
+                           coef.file= NULL, 
+                           output.file= NULL, 
+                           return.table= TRUE, 
+                           return.coef= FALSE, 
+                           write.file= FALSE, 
+                           output.coef= NULL, 
+                           write.coef= FALSE, 
+                           coef= coef_run_preclust)
 rm(tmp)
 
 setkey(preclust_data, precursor_id, fragment_id, tech_id, run_id)
-tmp <- unique(preclust_data[, list(fragment_id, precursor_id, tech_id, run_id, intensity, complete, min_frg, above_zero)])
+tmp <- unique(preclust_data[, list(fragment_id, precursor_id, tech_id, run_id, intensity,
+                                   complete, min_frg, above_zero)])
 rm(preclust_data)
 
 ## Calculate Mean, StdErr, StdDev of intensities over each tech id(??)
-for_selection <-  produce.stat(data= tmp, data.file= NULL, measure.id= 'fragment_id', value.var= 'intensity', stat.name= c('mean', 'se_corr', 'cv'), group.id= 'tech_id', stat.function= list(mean, se_corr, function(x){se_corr(x)/mean(x)}), output.file= NULL, return.table= TRUE, write.file= FALSE) #super-slow 1 - divide for cv separately  2 - produce.stat subsets data table for each function separately
+for_selection <-  produce.stat(data= tmp,
+                               data.file= NULL,
+                               measure.id= 'fragment_id',
+                               value.var= 'intensity',
+                               stat.name= c('mean', 'se_corr', 'cv'),
+                               group.id= 'tech_id',
+                               stat.function= list(mean, se_corr, function(x){se_corr(x)/mean(x)}), output.file= NULL, return.table= TRUE, write.file= FALSE) #super-slow 1 - divide for cv separately  2 - produce.stat subsets data table for each function separately
 for_selection[, c('intensity', 'mean'):= list(mean, NULL)]
 for_selection <- unique(for_selection[, names(for_selection)[names(for_selection) %in% ms.rep]:= NULL])
 write.file(data= for_selection, path= preclust.mean.ms.path)
@@ -92,7 +160,7 @@ data$min_frg_clust<- data[, precursor_id] %in% min_frg_clust
 rm(min_frg_clust)
 rm(tmp)
 
-## Normaliza one more time ????
+## Normalize one more time ????
 setkey(data, fragment_id, run_id, tech_id)
 tmp <- unique(data[complete==TRUE&min_frg==TRUE&above_zero==TRUE&cluster==TRUE&min_frg_clust==TRUE, list(fragment_id, run_id, tech_id, intensity)])
 setkey(tmp, fragment_id, run_id, tech_id)

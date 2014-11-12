@@ -18,7 +18,6 @@ ms.coef.file <- 'ms_coef.txt'
 tech.coef.file <- 'tech_coef.txt'
 biosample.coef.file <- 'biosample_coef.txt'
 
-not_from_mv <- TRUE
 
 data.path <- paste0(data.directory, data.files)
 samples.path <- paste0(data.directory, sample.desc, sample.description.file)

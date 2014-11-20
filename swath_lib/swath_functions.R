@@ -1,7 +1,7 @@
 #
 wd <- getwd()
 
-setwd('./swath_lib/')
+setwd(paste(sep="/", script_dir, "swath_lib"))
 
 require(data.table, quietly=TRUE)
 require(reshape2, quietly=TRUE)

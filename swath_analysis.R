@@ -1,17 +1,6 @@
-#
-rm(list= ls())
-#setwd("~/swath/mycoplasma_revamped/")
+source(paste(sep="/", script_dir, "swath_lib/swath_functions.R"))
 
-## Write pdf file with clustering results or not?
-CLUSTER_PDF=F
-
-## Old file format
-not_from_mv <- F
-
-
-source('./swath_lib/swath_functions.R')
-
-source('./default_settings.R')
+#source('./default_settings.R')
 #setwd(home)
 
 data <- collect_data(data.directory= data.path,

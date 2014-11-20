@@ -11,7 +11,7 @@ not_from_mv <- F
 
 source('./swath_lib/swath_functions.R')
 
-source('./settings.R')
+source('./default_settings.R')
 #setwd(home)
 
 data <- collect_data(data.directory= data.path,

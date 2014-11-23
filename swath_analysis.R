@@ -264,7 +264,7 @@ select_outcome <- function(x){
 
 clustering[, frg_outcome:= select_outcome(unique(.SD)), by= fragment_id, .SDcols=c('complete', 'cluster')]
 
-if(CLUSTER_PDF)
+if(cluster_pdf)
 {
     pdf('results/clustering_results.pdf')
     for(precursor in unique(clustering[, precursor_id])){

@@ -1,9 +1,19 @@
 #!/usr/bin/env Rscript
 
+require(logging)
+basicConfig()
+
+
 # Check if all packages are present and install them otherwise
-list.of.packages <- c("data.table", "fpc", "reshape2", "argparser")
+logdebug("Checking required packages...")
+list.of.packages <- c("data.table", "fpc", "reshape2", "argparser", "logging")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
-if(length(new.packages)) install.packages(new.packages)
+if(length(new.packages)) 
+{
+    loginfo("Installing: %s", paste(new.packages))
+    install.packages(new.packages, quiet = TRUE)
+}
+logdebug("Packages are OK.")
 
 if(commandArgs(trailingOnly=FALSE)[1] != "RStudio")
 {   
@@ -102,7 +112,7 @@ if(commandArgs(trailingOnly=FALSE)[1] != "RStudio")
     biosample.coef.path <- paste0(resuls.directory, biosample.coef.file)
     
     cluster_pdf = FALSE
-    not_from_mv = FALSE
+    not_from_mv = TRUE
 }
 
 source(paste(sep="/", script_dir, "swath_analysis.R"))

@@ -1,34 +1,50 @@
-#' Leave only fragments detected in all runs
+#' Leave only fragments detected in all runs or in % of rins 
+#' 
+#' If this function is called with \code{detect=0} 
+#' it leaves only fragments detected in all runs. 
+#' Or it leaves only fragments detected at least \code{detect} times or detected 
+#' in \code{detect} percent of cases, according to \code{percent} flage.
 #' 
 #' @param data data table
 #' @param flag
+#' @param measure.id
+#' @param rep.id
+#' @param detect
+#' @param percent
 complete.measurements <- function(data,
                                   measure.id= NULL,
                                   rep.id= NULL,
-                                  ndetect=0,
-                                  flag= TRUE,
+                                  detect=0,
+                                  percent=FALSE,
                                   flag.name= 'complete')
 {
-    
     # Load libraries
     require(data.table, quietly=TRUE) 
-    
-    setkeyv(data, c(measure.id, rep.id))
-    
-    # Keep only fragments detected en each run
-    nreps <- ulength(unlist(data[, get(rep.id)], recursive= TRUE, use.names= FALSE))
-    data[, times_detected:= ulength(get(rep.id)), by= measure.id]
-    
-    if(!flag){
-        data <- data[times_detected==nreps]
-    } else if(!is.null(flag.name)){
-        data[, eval(flag.name)] <- data[, times_detected]==nreps
-    } else {
-        stop('Error flag name needed')
-    } 
+        
+    # count each fragment occurencies
+    # http://stackoverflow.com/questions/19869145/counting-in-r-data-table
+    setkeyv(data, c(measure.id))
+    data[ , `:=`( times_detected = .N ) , by =  get(measure.id)]
+
+    #TODO(urban): Probably slow, check & rewrite
+    setkeyv(data, c(rep.id))
+    nreps = length(unique(data[, get(rep.id)]))
+
+    if (detect > 0)
+    {
+        if (percent)
+        {
+            data[,get(flag.name) := times_detected / nreps >= detect/100.0]    
+        }else
+        {
+            data[,get(flag.name) := times_detected >= detect]    
+        }  
+    }else
+    {
+        data[,get(flag.name) := times_detected == nreps]    
+    }
     
     data[, times_detected:= NULL]
-    #rm(list= c('fragments', 'fragment.stat', 'nruns'))
-    
+        
     return(data)
 }

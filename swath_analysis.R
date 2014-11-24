@@ -3,7 +3,7 @@ source(paste(sep="/", script_dir, "swath_lib/swath_functions.R"))
 #source('./default_settings.R')
 #setwd(home)
 
-data <- collect_data(data.directory= data.path,
+data <- collect.data(data.directory= data.path,
                      sample.description.file= samples.path, 
                      unique.file= unique.path, 
                      tryptic.file= tryptic.path, 

@@ -6,7 +6,7 @@
 #' @param tryptic.file tryptic peptides table
 #' @param not_from_mv indicates that data files in the "old format"
 #' @export
-collect_data <- function(data.directory, 
+collect.data <- function(data.directory, 
                          sample.description.file,
                          unique.file, 
                          tryptic.file, 

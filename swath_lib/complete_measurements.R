@@ -6,11 +6,11 @@
 #' in \code{detect} percent of cases, according to \code{percent} flage.
 #' 
 #' @param data data table
-#' @param flag
-#' @param measure.id
-#' @param rep.id
-#' @param detect
-#' @param percent
+#' @param measure.id identified fragment id
+#' @param rep.id experimnt id
+#' @param detect amount aof detected events
+#' @param percent is \code{detect} percent or not
+#' @param flag.name name of the column with results
 complete.measurements <- function(data,
                                   measure.id= NULL,
                                   rep.id= NULL,
@@ -18,13 +18,14 @@ complete.measurements <- function(data,
                                   percent=FALSE,
                                   flag.name= 'complete')
 {
-    # Load libraries
-    require(data.table, quietly=TRUE) 
-        
+    loginfo("Checking data completeness with detect=%i %s", as.integer(detect),
+            ifelse(percent, "percent.", "measurements."))
+    
     # count each fragment occurencies
     # http://stackoverflow.com/questions/19869145/counting-in-r-data-table
     setkeyv(data, c(measure.id))
-    data[ , `:=`( times_detected = .N ) , by =  get(measure.id)]
+    #data[ , `:=`( times_detected = .N ) , by =  get(measure.id)]
+    data[ , times_detected := .N  , by =  eval(measure.id)]
 
     #TODO(urban): Probably slow, check & rewrite
     setkeyv(data, c(rep.id))
@@ -34,17 +35,20 @@ complete.measurements <- function(data,
     {
         if (percent)
         {
-            data[,get(flag.name) := times_detected / nreps >= detect/100.0]    
+            data[,eval(flag.name) := times_detected / nreps >= detect/100.0]    
         }else
         {
-            data[,get(flag.name) := times_detected >= detect]    
+            data[,eval(flag.name) := times_detected >= detect]    
         }  
     }else
     {
-        data[,get(flag.name) := times_detected == nreps]    
+        data[,eval(flag.name) := times_detected == nreps]    
     }
     
     data[, times_detected:= NULL]
+    
+    loginfo("Of %i values %i are complete and %i are incomplete.", data[, .N],
+            data[get(flag.name)==TRUE, .N], data[get(flag.name)==FALSE, .N])
         
     return(data)
 }

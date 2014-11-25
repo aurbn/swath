@@ -22,10 +22,10 @@ complete.measurements <- function(data,
             ifelse(percent, "percent.", "measurements."))
     
     # count each fragment occurencies
-    # http://stackoverflow.com/questions/19869145/counting-in-r-data-table
-    setkeyv(data, c(measure.id))
-    #data[ , `:=`( times_detected = .N ) , by =  get(measure.id)]
-    data[ , times_detected := .N  , by =  eval(measure.id)]
+    setkeyv(data, rep.id)
+    
+    #data[ , times_detected := .N  , by =  eval(measure.id)] #FAST
+    data[ , times_detected := length(unique(get(rep.id))), by =  eval(measure.id)] #Reusable
 
     #TODO(urban): Probably slow, check & rewrite
     setkeyv(data, c(rep.id))

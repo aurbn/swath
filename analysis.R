@@ -12,4 +12,9 @@ data <- complete.measurements(data,
                               measure.id= "fragment_id",
                               rep.id= "run_id")
 
-
+# Keep only precursors with more or equal then 'min' fragments
+data <- complete.measurements(data,
+                              measure.id= 'precursor_id',
+                              rep.id= 'fragment_id',
+                              detect=3,
+                              flag.name = "minf")

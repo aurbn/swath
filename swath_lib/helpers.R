@@ -13,3 +13,41 @@ read_table <- function(filename)
 {
     data <- fread(input= data.file, sep= '\t', header= TRUE, showProgress= FALSE)
 } 
+
+#' Filter data.table rows according to logical columns
+#' 
+#' Construct a new data.table with rows from \code{data}
+#' where all (\code{logic="&"}) or any (\code{logic="|"}) columns 
+#' from \code{...} are true. Columns must be logical. 
+#' Also it is optiannaly removes these columns from the data.
+#' @param data data.table
+#' @param ... one or more column names
+#' @param logic & or |
+#' @param remove.columns remove selected columns or not
+filter.measurements <- function(data, ..., logic="&", remove.columns=TRUE)
+{
+    r <- NULL 
+    k <- c()
+    for ( x in list(...))
+    {
+        k <- c(k, x)
+        t <- paste0(x,"==TRUE")
+        if (is.null(r))
+        {
+            r <- t
+        }else
+        {
+            r <- paste(sep=logic, r, t)
+        }
+    }
+    setkeyv(data, k)
+    data_ <- data[eval(parse(text=r)),]
+    if (remove.columns)
+    {
+        for ( x in k)
+        {
+            data_[,eval(parse(text=x)) := NULL]
+        }
+    }
+    data_
+}

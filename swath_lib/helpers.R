@@ -40,8 +40,14 @@ filter.measurements <- function(data, ..., logic="&", remove.columns=TRUE)
             r <- paste(sep=logic, r, t)
         }
     }
+    
+    loginfo("Filtering data with vars: %s, logic=%s and remove.columns=%i", 
+            paste(k), logic, remove.columns)
+    n_before = data[,.N]
+            
     setkeyv(data, k)
     data_ <- data[eval(parse(text=r)),]
+    
     if (remove.columns)
     {
         for ( x in k)
@@ -49,5 +55,9 @@ filter.measurements <- function(data, ..., logic="&", remove.columns=TRUE)
             data_[,eval(parse(text=x)) := NULL]
         }
     }
+    
+    n_after = data_[,.N]
+    loginfo("%i values of %i was filtered out", n_before-n_after, n_before)
+    
     data_
 }

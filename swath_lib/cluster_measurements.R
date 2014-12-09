@@ -1,6 +1,5 @@
 #
 cluster.measurements <- function(data= NULL, flag= TRUE, flag.name= 'cluster', measure.id= NULL, group.id= NULL, rep.id= NULL, value.var= NULL, data.file= NULL, dbscn.eps.init= 5*pi/180, dbscn.eps.limit= 0.001, dbscn.MinPts= 3, dbscn.step= 0.98, output.file= NULL, return.table= TRUE, write.file= !is.null(output.file)){
-    browser()
   
   # Load libraries
   require(data.table, quietly=TRUE)  # data table is very efficeint way to work with large tables. so we used it.

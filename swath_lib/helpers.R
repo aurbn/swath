@@ -1,7 +1,7 @@
 write_table <- function(filename)
 {
     loginfo("Writing table: %s", filename)
-    if (!create.directory(dirname(output.file)==0)
+    if (!create.directory(dirname(output.file)==0))
     {
         logerror('Error: failed to create ', dirname(output.file))
         stop()

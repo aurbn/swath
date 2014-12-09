@@ -1,4 +1,5 @@
-source(paste(sep="/", script_dir, "swath_lib/swath_functions.R"))
+#source(paste(sep="/", script_dir, "swath_lib/swath_functions.R"))
+source("~/git/swath_old/swath_lib/swath_functions.R")
 
 #source('./default_settings.R')
 #setwd(home)

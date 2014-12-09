@@ -114,4 +114,4 @@ if(commandArgs(trailingOnly=FALSE)[1] != "RStudio")
     not_from_mv = FALSE
 }
 
-source(paste(sep="/", script_dir, "swath_analysis.R"))
+source(paste(sep="/", script_dir, "analysis.R"), verbose = T)

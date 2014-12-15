@@ -20,6 +20,7 @@ source('select_modifications.R')
 source('rank_groups.R')
 source('score.R')
 source('clustering_results.R')
+source('reconstruct_measurements.R')
 
 setwd(wd)
 rm(wd)

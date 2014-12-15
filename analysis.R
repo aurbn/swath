@@ -11,6 +11,9 @@ data <- collect.data(data.directory          = data.path,
 
 ## Keep only fragments intensity > 0
 ## Add here data rocovery procedure
+#data <- reconstruct.measurements(data)
+
+
 data <- threshold.measurements(data,
                                measure.id = 'fragment_id', 
                                value.var  = 'intensity', 

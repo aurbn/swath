@@ -10,6 +10,7 @@ if(length(new.packages))
 
 require(logging)
 basicConfig()
+addHandler(writeToFile, file="log.txt")
 
 logdebug("Checking required packages...")
 logdebug("Packages are OK.")
@@ -110,7 +111,7 @@ if(commandArgs(trailingOnly=FALSE)[1] != "RStudio")
     tech.coef.path <- paste0(resuls.directory, tech.coef.file)
     biosample.coef.path <- paste0(resuls.directory, biosample.coef.file)
     
-    cluster_pdf = FALSE
+    cluster_pdf = TRUE
     not_from_mv = FALSE
 }
 

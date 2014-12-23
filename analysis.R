@@ -11,7 +11,16 @@ data <- collect.data(data.directory          = data.path,
 
 ## Keep only fragments intensity > 0
 ## Add here data rocovery procedure
-#data <- reconstruct.measurements(data)
+data <- reconstruct.measurements.simple(data)
+
+#Remove runs from recursors where all i == 0
+setkey(data, precursor_id,tech_id)
+data = data[, bad_run_pr := (sum(intensity==0) / .N ) < 0.7, by=list(precursor_id, tech_id)]
+data <- filter.measurements(data, "bad_run_pr")
+#And now remove precursors with < 5 runs
+setkey(data, precursor_id, tech_id)
+data = data[, ntech_ok :=  length(unique(tech_id)) >= 5, by=list(precursor_id)]
+data <- filter.measurements(data, "ntech_ok")
 
 
 data <- threshold.measurements(data,
@@ -24,10 +33,13 @@ data <- threshold.measurements(data,
 data <- filter.measurements(data, "above_zero", remove.columns = FALSE)
 
 # Leave only fragments detected in all runs
-data <- complete.measurements(data,
-                              measure.id = "fragment_id",
-                              rep.id     = "run_id",
-                              flag.name  ="complete")
+# data <- complete.measurements(data,
+#                               measure.id = "fragment_id",
+#                               rep.id     = "run_id",
+#                               flag.name  ="complete")
+data$complete = T
+
+data <- filter.measurements(data, "complete", remove.columns = FALSE)
 
 # Keep only precursors with more or equal then 'min' fragments
 data <- complete.measurements(data,
@@ -36,12 +48,14 @@ data <- complete.measurements(data,
                               detect     = 3,
                               flag.name  = "min_frg")
 
+data <- filter.measurements(data, "min_frg", remove.columns = FALSE)
+
 # Select desired modifications
 data <- select.modifications(data)
 
 # Filter out the values which are not passed the tests
-data <- filter.measurements(data, "complete", "min_frg", "selected_modifications",
-                            remove.columns = FALSE)
+#data <- filter.measurements(data, "complete", "min_frg", "selected_modifications",
+#                            remove.columns = FALSE)
 
 
 
@@ -51,6 +65,8 @@ data <- filter.measurements(data, "complete", "min_frg", "selected_modifications
 ###############################################################################
 ##?? Normalization (Good)
 setkey(data, fragment_id, run_id, tech_id)
+
+### HERE
 coef_run_preclust <- normalize(data= data, 
                                measure.id= 'fragment_id', 
                                value.var= 'intensity', 
@@ -296,6 +312,8 @@ precursor_score[, names(precursor_score)[names(precursor_score) %in% ms.rep]:= N
 precursor_score[, names(precursor_score)[names(precursor_score) %in% frg.lev]:= NULL]
 precursor_score <- unique(precursor_score)
 
+loginfo("%i precursors are quintified", length(unique(precursor_score$precursor_id)))
+
 write.file(precursor_score, precursor.sample.score.path)
 
 topN <- 3
@@ -322,6 +340,8 @@ protein_score <- unique(protein_score)
 protein_score.w <- data.table::dcast.data.table(data= protein_score, formula= protein_id~bio_sample,
                                                 value.var= 'protein_score')
 
+loginfo("%i proteins are quintified", length(unique(protein_score$protein_id)))
+
 pepnum <- use[rank<=topN, list(protein_id, peptide_id)]
 pepnum[, pep_num:= ulength(peptide_id), by= protein_id]
 pepnum[, peptide_id:= NULL]
@@ -340,3 +360,6 @@ protein_score[, bio:= substr(bio_sample, 1, -1+regexpr('_', bio_sample, fixed= T
 protein_score[, bio_sample:= NULL]
 
 protein_score_by_state <- data.table::dcast.data.table(data= protein_score, formula= protein_id+bio+pep_num~state, value.var= 'protein_score')
+
+write.file(sort(unique(precursor_score$precursor_id)), "precursors.txt")
+write.file(sort(unique(protein_score$protein_id)), "precursors.txt")

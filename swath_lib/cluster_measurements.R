@@ -21,6 +21,9 @@ cluster.measurements <- function(data,
                                                           eval(group.id), eval(rep.id)),
                                      value.var = eval(value.var)))
     
+    ### For empty runs --- Check it
+    clusterizeMe = na.omit(clusterizeMe) 
+    
     setkeyv(clusterizeMe, c(group.id, measure.id))
     
     clusterizeMe$cluster <- FALSE # set all cluster flags to FALSE

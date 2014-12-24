@@ -146,12 +146,12 @@ reconstruct.measurements.simple <- function(data, completeness = 5, recreq = 3)
                     run_id       == eval(r) & 
                     fragment_id  != eval(f) &
                     zero         != TRUE,
-                    sum(dist*intensity*scale)/sum(dist)]
+                    c(sum(dist*intensity*scale)/sum(dist), .N)]
             
-            if (nrow(rest) < recreq){
+            if (i[2] < recreq){
                 next
             }else{
-                data[run_id == r & fragment_id == f, intensity := i]
+                data[run_id == r & fragment_id == f, intensity := i[1]]
                 data[run_id == r & fragment_id == f, recovered := TRUE]
             }
         }

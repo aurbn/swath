@@ -12,6 +12,7 @@ data <- collect.data(data.directory          = data.path,
 ## Keep only fragments intensity > 0
 ## Add here data rocovery procedure
 data <- reconstruct.measurements.simple(data)
+write.file(data, "rec.txt")
 
 #Remove runs from recursors where all i == 0
 setkey(data, precursor_id,tech_id)
@@ -362,4 +363,4 @@ protein_score[, bio_sample:= NULL]
 protein_score_by_state <- data.table::dcast.data.table(data= protein_score, formula= protein_id+bio+pep_num~state, value.var= 'protein_score')
 
 write.file(sort(unique(precursor_score$precursor_id)), "precursors.txt")
-write.file(sort(unique(protein_score$protein_id)), "precursors.txt")
+write.file(sort(unique(protein_score$protein_id)), "proteins.txt")

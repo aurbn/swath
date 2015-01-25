@@ -14,6 +14,26 @@ read_table <- function(filename)
     data <- fread(input= data.file, sep= '\t', header= TRUE, showProgress= FALSE)
 } 
 
+build.check.expr <- function(flags, logic="&")
+{
+    r <- NULL 
+    k <- c()
+    for ( x in flags)
+    {
+        k <- c(k, x)
+        t <- paste0(x,"==TRUE")
+        if (is.null(r))
+        {
+            r <- t
+        }else
+        {
+            r <- paste(sep=logic, r, t)
+        }
+    }
+
+    return(parse(text=r))
+}
+
 #' Filter data.table rows according to logical columns
 #' 
 #' Construct a new data.table with rows from \code{data}
@@ -26,31 +46,17 @@ read_table <- function(filename)
 #' @param remove.columns remove selected columns or not
 filter.measurements <- function(data, ..., logic="&", remove.columns=TRUE)
 {
-    r <- NULL 
-    k <- c()
-    for ( x in list(...))
-    {
-        k <- c(k, x)
-        t <- paste0(x,"==TRUE")
-        if (is.null(r))
-        {
-            r <- t
-        }else
-        {
-            r <- paste(sep=logic, r, t)
-        }
-    }
-    
     loginfo("Filtering data with vars: %s, logic=%s and remove.columns=%i", 
-            paste(k), logic, remove.columns)
+            paste(list(...)), logic, remove.columns)
+    
     n_before = data[,.N]
-            
-    setkeyv(data, k)
-    data_ <- data[eval(parse(text=r)),]
+    
+    setkeyv(data, unlist(list(...)))
+    data_ <- data[eval(build.check.expr(...,logic=logic)),]
     
     if (remove.columns)
     {
-        for ( x in k)
+        for ( x in list(...))
         {
             data_[,eval(parse(text=x)) := NULL]
         }
@@ -61,3 +67,46 @@ filter.measurements <- function(data, ..., logic="&", remove.columns=TRUE)
     
     data_
 }
+
+filter.apply.combine <- function(data, func, columns, ...)
+{
+    browser()
+    fn <- match.fun(func)
+    tmp <- unique(do.call(filter.measurements, c(data, columns))[,list(fragment_id, run_id)])
+    setkey(tmp, fragment_id, run_id)
+    tmp <- fn(data=tmp, ...)
+    setkey(tmp, fragment_id, run_id)
+    setkey(data, fragment_id, run_id)
+    data = tmp[data]
+    return(data)
+}
+
+splittmp <- function(data, flags, columns)
+{
+    setkeyv(data, columns)
+    return(unique(data[eval(build.check.expr(flags)), columns, with = FALSE]))
+}
+
+combinetmp.n <- function(data, tmp)
+{
+    browser()
+    columns <- intersect(names(data), names(tmp))
+    setkeyv(data, columns)
+    setkeyv(tmp, columns)
+    r = tmp[data]
+    fl = setdiff(names(tmp), names(data))
+    r[fl==NA, fl:=FALSE, with=FALSE]
+    r
+}
+
+combinetmp <- function(data, tmp, group)
+{
+    fl = setdiff(names(tmp), names(data))
+    ok <- unique(tmp[eval(build.check.expr(fl)), group, with=FALSE])
+    ok[,eval(fl):=TRUE]
+    setkeyv(ok, group)
+    setkeyv(data, group)
+    data = ok[data]
+    data[is.na(get(fl)), (fl) := FALSE]
+}
+

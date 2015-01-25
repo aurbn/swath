@@ -10,20 +10,6 @@ data <- collect.data(data.directory          = data.path,
                      not_from_mv             = not_from_mv)
 
 ## Keep only fragments intensity > 0
-## Add here data rocovery procedure
-data <- reconstruct.measurements.simple(data)
-write.file(data, "rec.txt")
-
-#Remove runs from recursors where all i == 0
-setkey(data, precursor_id,tech_id)
-data = data[, bad_run_pr := (sum(intensity==0) / .N ) < 0.7, by=list(precursor_id, tech_id)]
-data <- filter.measurements(data, "bad_run_pr")
-#And now remove precursors with < 5 runs
-setkey(data, precursor_id, tech_id)
-data = data[, ntech_ok :=  length(unique(tech_id)) >= 5, by=list(precursor_id)]
-data <- filter.measurements(data, "ntech_ok")
-
-
 data <- threshold.measurements(data,
                                measure.id = 'fragment_id', 
                                value.var  = 'intensity', 
@@ -31,25 +17,25 @@ data <- threshold.measurements(data,
                                operator   = '>',
                                flag.name  = 'above_zero') 
 
-data <- filter.measurements(data, "above_zero", remove.columns = FALSE)
+#data <- filter.measurements(data, "above_zero", remove.columns = FALSE)
 
-# Leave only fragments detected in all runs
-# data <- complete.measurements(data,
-#                               measure.id = "fragment_id",
-#                               rep.id     = "run_id",
-#                               flag.name  ="complete")
-data$complete = T
+tmp = splittmp(data = data, flags = "above_zero", columns = c("fragment_id", "run_id"))
+tmp <- complete.measurements(tmp,
+                              measure.id = "fragment_id",
+                              rep.id     = "run_id",
+                              flag.name  ="complete")
+data <- combinetmp(data, tmp, "fragment_id")
 
-data <- filter.measurements(data, "complete", remove.columns = FALSE)
 
-# Keep only precursors with more or equal then 'min' fragments
-data <- complete.measurements(data,
+# Min 3 fragments per each precursor
+tmp = splittmp(data = data, flags = c("above_zero", "complete"),
+               columns = c("fragment_id", "precursor_id"))
+tmp <- complete.measurements(tmp, 
                               measure.id = 'precursor_id',
                               rep.id     = 'fragment_id',
                               detect     = 3,
                               flag.name  = "min_frg")
-
-data <- filter.measurements(data, "min_frg", remove.columns = FALSE)
+data <- combinetmp(data, tmp, "precursor_id")
 
 # Select desired modifications
 data <- select.modifications(data)
@@ -64,10 +50,11 @@ data <- select.modifications(data)
 ###############################################################################
 ##################################OLD CODE#####################################
 ###############################################################################
-##?? Normalization (Good)
-setkey(data, fragment_id, run_id, tech_id)
 
-### HERE
+### MS replicates normalizetion
+## Compute normalization coefs on "good" measurements 
+tmp = splittmp(data = data, flags = c("above_zero", "complete", "min_frg"),
+               columns = c("fragment_id", "run_id", "tech_id", "intensity"))
 coef_run_preclust <- normalize(data= data, 
                                measure.id= 'fragment_id', 
                                value.var= 'intensity', 
@@ -77,7 +64,7 @@ coef_run_preclust <- normalize(data= data,
                                return.coef= TRUE, 
                                output.coef= preclust.ms.coef.path)
 
-##?? Normalization (All)
+##Apply them on all dataset 
 setkey(coef_run_preclust, tech_id, run_id)
 preclust_data <- normalize(data= data,
                            measure.id= 'fragment_id',
@@ -95,6 +82,7 @@ rm(preclust_data)
 ## Calculate Mean, StdErr, StdDev of intensities over each tech id(??)
 #super-slow 1 - divide for cv separately  2 - produce.stat
 #subsets data table for each function separately
+
 for_selection <-  produce.stat(data= tmp,
                                measure.id= 'fragment_id',
                                value.var= 'intensity',

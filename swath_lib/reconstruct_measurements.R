@@ -1,3 +1,20 @@
+#' Compare \code{value.var} with \code{threshhold} by \code{operator} and 
+#' set the \code{flag}
+#' 
+#' @param data data.table
+#' @param measure.id 
+#' @param value.var value column to be compared
+#' @param threshhold value to compare with
+#' @param operator comparison operator
+#' @param flag.name flag to be set
+drop.zero.ms <- function(data, 
+                         measure.id, 
+                         value.var, 
+                         threshold = 0)
+{
+    
+}
+
 reconstruct.measurements <- function(data, completeness = 5)
 {
    # browser()

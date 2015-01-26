@@ -1,4 +1,4 @@
-#' Remove ms pers without required number of reps :/
+#' Remove ms reps without required number of reps :/
 #' 
 #' @param data data.table
 #' @param require.measurements minimum number of non 0 measurements
@@ -27,15 +27,43 @@ drop.zero.ms <- function(data,
 
 reconstruct.tech <- function(data)
 {
-    setkey(data, tech_id, fragment_id)
-    recover.tech <- function(fragment.id, tech.id)
+    browser()
+    make_ad <- function(pivot)
     {
-        pivot = unique(data[tech_id != tech.id, tech_id])
+        function(int)
+        {
+            good = pivot!=0 & int != 0 
+            #CONSTANT
+            if (sum(good) < 5)
+                return(0)
+            r <- angleDist(pivot[good], int[good])
+            r[!is.finite(r)] <- pi
+            r <- (pi-abs(r))/pi
+            r
+        }
     }
     
-    rec_candidates = unique(data[intensity ==0,list(fragment_id, tech_id),
+    setkey(data, tech_id, fragment_id)
+    recover.tech <- function(fragment.id, tech.id, precursor.id)
+    {
+        browser()
+        wt = data[precursor_id == prec]
+        pivot_tech = unique(wt[tech_id != tech.id & intensity != 0, tech_id])
+        pivot_int  <- wt[fragment_id == fragment.id & run_id %in% pivot_tech,intensity]
+        ad <- make_ad(pivot_int)
+        wt[, dist := ad(intensity), by=fragment_id]
+        wt[intensity >0, scale := mean(pivot_int[pivot_int>0])/mean(intensity), by=fragment_id]
+        i = wt[precursor_id     == eval(precursor.id) & 
+               tech_id      == eval(tech.id) & 
+               fragment_id  != eval(fragment.id) &
+               intensity    != 0,
+           c(sum(dist*intensity*scale)/sum(dist), .N)]        
+        i
+    }
+    
+    rec_candidates = unique(data[intensity ==0,list(fragment_id, tech_id, precursor_id),
                                  by=list(fragment_id, tech_id)])
-    rec_candidates[,intensity = recover.tech(fragment_id, tech_id)]
+    rec_candidates[,intensity := recover.tech(fragment_id, tech_id, precursor_id)]
 }
 
 reconstruct.measurements <- function(data, completeness = 5)

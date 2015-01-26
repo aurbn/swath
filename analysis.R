@@ -55,7 +55,7 @@ data <- select.modifications(data)
 ## Compute normalization coefs on "good" measurements 
 tmp = splittmp(data = data, flags = c("above_zero", "complete", "min_frg"),
                columns = c("fragment_id", "run_id", "tech_id", "intensity"))
-coef_run_preclust <- normalize(data= data, 
+coef_run_preclust <- normalize(data= tmp, 
                                measure.id= 'fragment_id', 
                                value.var= 'intensity', 
                                rep.id= 'run_id',
@@ -74,28 +74,32 @@ preclust_data <- normalize(data= data,
                            coef= coef_run_preclust)
 #rm(tmp)
 
+
+### Here we deal with incomplete measurements (failed ms reps)
+preclust_data <- drop.zero.ms(preclust_data, req=2, drop = TRUE)
+
 setkey(preclust_data, precursor_id, fragment_id, tech_id, run_id)
-tmp <- unique(preclust_data[, list(fragment_id, precursor_id, tech_id, run_id, intensity,
-                                   complete, min_frg, above_zero)])
-rm(preclust_data)
 
 ## Calculate Mean, StdErr, StdDev of intensities over each tech id(??)
 #super-slow 1 - divide for cv separately  2 - produce.stat
 #subsets data table for each function separately
-
-for_selection <-  produce.stat(data= tmp,
+for_selection <-  produce.stat(data= preclust_data,
                                measure.id= 'fragment_id',
                                value.var= 'intensity',
                                stat.name= c('mean', 'se_corr', 'cv'),
                                group.id= 'tech_id',
                                stat.function= list(mean, se_corr, function(x){se_corr(x)/mean(x)}))
+rm(preclust_data)
 
 for_selection[, c('intensity', 'mean'):= list(mean, NULL)]
 for_selection <- unique(for_selection[, names(for_selection)[names(for_selection) %in% ms.rep]:= NULL])
 write.file(data= for_selection, path= preclust.mean.ms.path)
 
+# Here we try to extrapolate some measurements
+
 setkey(data, precursor_id, fragment_id)
 setkey(for_selection, fragment_id, precursor_id, tech_id)
+
 tmp <- unique(for_selection[complete==TRUE&min_frg==TRUE&above_zero==TRUE, list(fragment_id, precursor_id, tech_id, intensity)])
 setkey(tmp, fragment_id, precursor_id, tech_id)
 

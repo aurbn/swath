@@ -1,18 +1,41 @@
-#' Compare \code{value.var} with \code{threshhold} by \code{operator} and 
-#' set the \code{flag}
+#' Remove ms pers without required number of reps :/
 #' 
 #' @param data data.table
-#' @param measure.id 
-#' @param value.var value column to be compared
-#' @param threshhold value to compare with
-#' @param operator comparison operator
-#' @param flag.name flag to be set
+#' @param require.measurements minimum number of non 0 measurements
+#' @param drop immediate drom measurements 
+#' @param of set a flag
 drop.zero.ms <- function(data, 
-                         measure.id, 
-                         value.var, 
-                         threshold = 0)
+                         require.measurements = 2,
+                         drop = FALSE,
+                         flag = "drop_ms_rep")
 {
+    browser()
+    setkey(data, fragment_id, tech_id)
+    data[,nzeros := sum(intensity > 0), by = list(fragment_id, tech_id)]
+    data[, makenull := nzeros < require.measurements, by = list(fragment_id, tech_id)]
+    data[,eval(flag) := FALSE]
+    data[makenull == FALSE & intensity == 0, eval(flag) := TRUE]
+    data[makenull == TRUE, intensity := 0]
+    data[,c("makenull", "nzeros") := NULL]
+    if (drop)
+    {
+        data = data[get(flag)==FALSE]
+        data[, eval(flag) := NULL]
+    }
+    data
+}
+
+reconstruct.tech <- function(data)
+{
+    setkey(data, tech_id, fragment_id)
+    recover.tech <- function(fragment.id, tech.id)
+    {
+        pivot = unique(data[tech_id != tech.id, tech_id])
+    }
     
+    rec_candidates = unique(data[intensity ==0,list(fragment_id, tech_id),
+                                 by=list(fragment_id, tech_id)])
+    rec_candidates[,intensity = recover.tech(fragment_id, tech_id)]
 }
 
 reconstruct.measurements <- function(data, completeness = 5)
@@ -175,3 +198,5 @@ reconstruct.measurements.simple <- function(data, completeness = 5, recreq = 3)
     }
     return(data)
 }
+
+

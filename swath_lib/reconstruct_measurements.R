@@ -24,209 +24,125 @@ drop.zero.ms <- function(data,
     data
 }
 
-reconstruct.tech <- function(data)
+reconstruct.tech.single <- function(data)
 {
-    make_ad <- function(pivot)
+    angDist <- function(data, f1, f2)
     {
-        function(int)
-        {
-            good = pivot!=0 & int != 0 
-            #CONSTANT
-            if (sum(good) < 5)
-                return(0)
-            r <- angleDist(pivot[good], int[good])
-            r[!is.finite(r)] <- pi
-            r <- (pi-abs(r))/pi
-            r
-        }
+        t1 <- data[intensity != 0 & fragment_id == f1, tech_id]
+        t2 <- data[intensity != 0 & fragment_id == f2, tech_id]
+        techs <- intersect(t1,t2)
+        #CONSTANT
+        if (length(techs) < 3)
+            return(0)
+        
+        r <- angleDist(data[fragment_id == f1 & tech_id %in% techs, intensity],
+                       data[fragment_id == f2 & tech_id %in% techs, intensity]) ## KEYBY
+
+        r[!is.finite(r)] <- pi
+        r <- (pi-abs(r))/pi
+        r
     }
     
     setkey(data, tech_id, fragment_id)
-    recover.tech <- function(fragment.id, tech.id, precursor.id)
+    recover.tech <- function(fragment.id, tech.id, precursor.id, num)
     {
-        browser()
-        wt = data[precursor_id == precursor.id, 
+        #print(num)
+        wt <- data[precursor_id == precursor.id, 
                   list(fragment_id, precursor_id, tech_id, intensity)]
-        pivot_tech = unique(wt[tech_id != tech.id & intensity != 0, tech_id])
-        pivot_int  <- wt[fragment_id == fragment.id & tech_id %in% pivot_tech, intensity]
-        ad <- make_ad(pivot_int)
-        wt[, dist := ad(intensity), by=fragment_id]
-        wt[intensity >0, scale := mean(pivot_int[pivot_int>0])/mean(intensity), by=fragment_id]
+        setkey(wt, fragment_id, tech_id)
+        pivot_tech <- unique(wt[tech_id != tech.id & intensity != 0, tech_id])
+        #pivot_int  <- wt[fragment_id == fragment.id & tech_id %in% pivot_tech, intensity]
+        wt[, dist := angDist(wt, fragment.id, fragment_id), by=fragment_id]
+        #wt[,dist:=1]
+        pivot_mn <- data[fragment_id == fragment.id & tech_id %in% pivot_tech, mean(intensity)]
+        
+        wt[intensity >0, scale := pivot_mn/mean(intensity), by=fragment_id]
         i = wt[precursor_id     == eval(precursor.id) & 
                tech_id      == eval(tech.id) & 
                fragment_id  != eval(fragment.id) &
                intensity    != 0,
            c(sum(dist*intensity*scale)/sum(dist), .N)]        
-        i
+        if (i[2] > 3)
+            return(i[1])
+        else
+            return(0)
     }
-    
-    rec_candidates = unique(data[intensity ==0,list(precursor_id),
+    #browser()    
+
+    data[, nzeros := sum(intensity > 0), by = fragment_id]
+    #CONSTANT
+    rec_candidates = unique(data[nzeros > 3 & intensity == 0,list(precursor_id),
                                  by=list(fragment_id, tech_id)])
-    setkey(data, precursor_id)
-    browser()
-    rec_candidates[,intensity := recover.tech(fragment_id, tech_id, precursor_id),
+    setkey(data, precursor_id, tech_id, fragment_id)
+    
+    rec_candidates[,r_intensity := recover.tech(fragment_id, tech_id, precursor_id, .I),
+                   by = list(fragment_id, tech_id)]
+    rec_candidates[, list(fragment_id, tech_id, r_intensity)]
+}
+
+reconstruct.tech.multiple <- function(data)
+{
+    angDist <- function(frame, f1, f2)
+    {
+        t1 <- frame[intensity != 0 & fragment_id == f1, tech_id]
+        t2 <- frame[intensity != 0 & fragment_id == f2, tech_id]
+        techs <- intersect(t1,t2)
+        #CONSTANT
+        if (length(techs) < 3)
+            return(0)
+        
+        r <- angleDist(frame[fragment_id == f1 & tech_id %in% techs, intensity],
+                       frame[fragment_id == f2 & tech_id %in% techs, intensity]) ## KEYBY
+        
+        r[!is.finite(r)] <- pi
+        r <- (pi-abs(r))/pi
+        r
+    }
+    
+    setkey(data, tech_id, fragment_id)
+    recover.tech <- function(fragment.id, tech.id, precursor.id, num)
+    {
+        #print(num)
+        wt <- data[precursor_id == precursor.id, 
+                  list(fragment_id, precursor_id, tech_id, intensity)]
+        setkey(wt, fragment_id, tech_id)
+        
+        #wt[, dist := angDist(wt, fragment.id, fragment_id), by=fragment_id]
+        
+        wtech <- wt[tech_id == tech.id, list(fragment_id, ti = intensity)]
+        setkey(wtech, fragment_id)
+        setkey(wt, fragment_id)
+        wt <- wt[wtech]
+        wfrag <- wt[fragment_id == fragment.id, list(tech_id, fi = intensity)]
+        setkey(wfrag, tech_id)
+        setkey(wt, tech_id)
+        wt <- wt[wfrag]
+        wt[, est := ti*fi/intensity]
+        
+        wt <- wt[is.finite(est) & est >0]
+        
+        #Find mode
+        if (length(wt$est) > 3)
+        {
+            dens <- density(wt$est)
+            i <- dens$x[which.max(dens$y)]
+        }else{
+            i <- 0
+        }
+        
+        #i = weighted.mean(wt$est, wt$dist)
+        i
+
+    }
+    #browser()    
+    
+    data[, nzeros := sum(intensity > 0), by = fragment_id]
+    #CONSTANT
+    rec_candidates = unique(data[nzeros > 3 & intensity == 0,list(precursor_id),
+                                 by=list(fragment_id, tech_id)])
+    setkey(data, precursor_id, tech_id, fragment_id)
+    
+    rec_candidates[,r_intensity := recover.tech(fragment_id, tech_id, precursor_id, .I),
                    by=list(fragment_id, tech_id)]
+    rec_candidates[,list(fragment_id, tech_id, r_intensity)]
 }
-
-reconstruct.measurements <- function(data, completeness = 5)
-{
-   # browser()
-    # Find all "zero" measurements
-    data[,zero := intensity <= 0]
-    data[,zeros := sum(zero), by = fragment_id]
-    data[,rec_target := zeros != 0 & zeros < completeness]
-    data[,recovered := FALSE]
-
-    make_ad <- function(pivot)
-    {
-        function(int)
-        {
-            r <- angleDist(pivot, int)
-            r[!is.finite(r)] <- pi
-            r <- (pi-abs(r))/pi
-            r
-        }
-    }
-    
-    fragments <- unique(data[rec_target == TRUE, fragment_id])
-    n.fragments = length(fragments)
-    i.fragments = 1
-    
-    create.directory(subDir = "refs")
-    
-    for (f in fragments)
-    {
-        loginfo("Recontruction %i of %i fragment, %.1f%%",
-                i.fragments, n.fragments, i.fragments*100/n.fragments)
-        i.fragments = i.fragments + 1
-        
-        prec = unique(data[fragment_id==f, precursor_id])
-        if (length(prec)!=1)
-        {
-            stop("More than one precursor for fragment!")
-        }
-        wt = data[precursor_id == prec]
-        
-        #Recovery _target_measurements_
-        rec_runs = wt[fragment_id == f & zero == TRUE, run_id]
-        for (r in rec_runs)
-        {
-            pivot_runs <- wt[fragment_id == f & zero == FALSE, run_id]
-            if (length(pivot_runs) < 2)
-                next
-            pivot_int  <- wt[fragment_id == f & run_id %in% pivot_runs,intensity]
-            
-            #Angular distance
-            ad <- make_ad(pivot_int)
-            dist <- wt[run_id %in% pivot_runs, ad(intensity), by=fragment_id]$V1
-            
-            Is = c()
-            for (pr in pivot_runs)
-            {
-                I = pivot_int*wt[run_id != get(pr), ]
-            }
-            for (rr in pivot_runs)
-            {
-                I1 = wt[run_id == r, intensity]
-                I2 = wt[run_id == rr,intensity]
-                Iok = I2 > 0
-                if (sum(Iok) < 2)
-                    next
-                ddist = dist[Iok]
-                I1 = I1[Iok]
-                I2 = I2[Iok]
-                ddist <- rep(1, length(ddist))
-                I = wt[fragment_id == f & run_id == rr, intensity]*
-                    sum(na.omit(I1*ddist/I2))/sum(dist)
-                Is = c(Is, I)
-            }
-            
-            png(paste(sep="", "refs/", i.fragments, "_", r))
-            plot(density(Is), main = paste(sep="_", mean(Is), length(Is)))
-            dev.off()
-            Is = mean(Is)
-            data[run_id == r & fragment_id == f, intensity := Is]
-            data[run_id == r & fragment_id == f, recovered := TRUE]
-        }
-    }
-
-}
-
-reconstruct.measurements.simple <- function(data, completeness = 5, recreq = 3)
-{
-    # browser()
-    # Find all "zero" measurements
-    data[,zero := intensity <= 0]
-    data[,zeros := sum(zero), by = fragment_id]
-    data[,rec_target := zeros != 0 & zeros < completeness]
-    data[,recovered := FALSE]
-    
-    make_ad <- function(pivot)
-    {
-        function(int)
-        {
-            good = pivot!=0 & int != 0 
-            #CONSTANT
-            if (sum(good) < 5)
-                return(0)
-            r <- angleDist(pivot[good], int[good])
-            r[!is.finite(r)] <- pi
-            r <- (pi-abs(r))/pi
-            r
-        }
-    }
-    
-    
-    fragments <- unique(data[rec_target == TRUE, fragment_id])
-    n.fragments = length(fragments)
-    i.fragments = 1
-    
-    create.directory(subDir = "refs")
-    
-    for (f in fragments)
-    {
-        loginfo("Recontruction %i of %i fragment, %.1f%%",
-                i.fragments, n.fragments, i.fragments*100/n.fragments)
-        i.fragments = i.fragments + 1
-        
-        prec = unique(data[fragment_id==f, precursor_id])
-        if (length(prec)!=1)
-        {
-            stop("More than one precursor for fragment!")
-        }
-        
-        # "Current frane"
-        setkey(data, precursor_id)
-        wt = data[precursor_id == prec]
-        pivot_int  <- wt[fragment_id == f,intensity]
-        #Angular distance
-        
-        ad <- make_ad(pivot_int)
-        wt[, dist := ad(intensity), by=fragment_id]
-        
-        #Between target and other fragment
-        #Scaling fator (for different absolute intensisies)
-        wt[intensity >0, scale := mean(pivot_int[pivot_int>0])/mean(intensity), by=fragment_id]
-        
-        #Recovery _target_measurements_
-        rec_runs = wt[fragment_id == f & zero == TRUE, run_id]
-        for (r in rec_runs)
-        {
-            i <- wt[precursor_id == eval(prec) & 
-                    run_id       == eval(r) & 
-                    fragment_id  != eval(f) &
-                    zero         != TRUE,
-                    c(sum(dist*intensity*scale)/sum(dist), .N)]
-            
-            if (i[2] < recreq){
-                next
-            }else{
-                data[run_id == r & fragment_id == f, intensity := i[1]]
-                data[run_id == r & fragment_id == f, recovered := TRUE]
-            }
-        }
-    }
-    return(data)
-}
-
-

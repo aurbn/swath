@@ -96,7 +96,14 @@ for_selection <- unique(for_selection[, names(for_selection)[names(for_selection
 write.file(data= for_selection, path= preclust.mean.ms.path)
 
 # Here we try to extrapolate some measurements
-for_selection = reconstruct.tech(for_selection)
+rec2 <- reconstruct.tech.multiple(for_selection)
+
+rec1 <- reconstruct.tech.single(for_selection)
+
+for_selection <- combinetmp.n(for_selection, rec)
+for_selection[!is.na(r_intensity), intensity := r_intensity]
+for_selection[, r_intensity := NULL]
+
 
 setkey(data, precursor_id, fragment_id)
 setkey(for_selection, fragment_id, precursor_id, tech_id)

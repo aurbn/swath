@@ -89,7 +89,6 @@ splittmp <- function(data, flags, columns)
 
 combinetmp.n <- function(data, tmp)
 {
-    browser()
     columns <- intersect(names(data), names(tmp))
     setkeyv(data, columns)
     setkeyv(tmp, columns)

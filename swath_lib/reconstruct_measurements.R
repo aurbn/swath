@@ -9,7 +9,6 @@ drop.zero.ms <- function(data,
                          drop = FALSE,
                          flag = "drop_ms_rep")
 {
-    browser()
     setkey(data, fragment_id, tech_id)
     data[,nzeros := sum(intensity > 0), by = list(fragment_id, tech_id)]
     data[, makenull := nzeros < require.measurements, by = list(fragment_id, tech_id)]
@@ -27,7 +26,6 @@ drop.zero.ms <- function(data,
 
 reconstruct.tech <- function(data)
 {
-    browser()
     make_ad <- function(pivot)
     {
         function(int)
@@ -47,9 +45,10 @@ reconstruct.tech <- function(data)
     recover.tech <- function(fragment.id, tech.id, precursor.id)
     {
         browser()
-        wt = data[precursor_id == prec]
+        wt = data[precursor_id == precursor.id, 
+                  list(fragment_id, precursor_id, tech_id, intensity)]
         pivot_tech = unique(wt[tech_id != tech.id & intensity != 0, tech_id])
-        pivot_int  <- wt[fragment_id == fragment.id & run_id %in% pivot_tech,intensity]
+        pivot_int  <- wt[fragment_id == fragment.id & tech_id %in% pivot_tech, intensity]
         ad <- make_ad(pivot_int)
         wt[, dist := ad(intensity), by=fragment_id]
         wt[intensity >0, scale := mean(pivot_int[pivot_int>0])/mean(intensity), by=fragment_id]
@@ -61,9 +60,12 @@ reconstruct.tech <- function(data)
         i
     }
     
-    rec_candidates = unique(data[intensity ==0,list(fragment_id, tech_id, precursor_id),
+    rec_candidates = unique(data[intensity ==0,list(precursor_id),
                                  by=list(fragment_id, tech_id)])
-    rec_candidates[,intensity := recover.tech(fragment_id, tech_id, precursor_id)]
+    setkey(data, precursor_id)
+    browser()
+    rec_candidates[,intensity := recover.tech(fragment_id, tech_id, precursor_id),
+                   by=list(fragment_id, tech_id)]
 }
 
 reconstruct.measurements <- function(data, completeness = 5)

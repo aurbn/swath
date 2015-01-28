@@ -17,8 +17,12 @@ data <- threshold.measurements(data,
                                operator   = '>',
                                flag.name  = 'above_zero') 
 
-#data <- filter.measurements(data, "above_zero", remove.columns = FALSE)
+if (TEST)
+{
+    data <- filter.measurements(data, "above_zero", remove.columns = FALSE)
 
+}
+    
 tmp = splittmp(data = data, flags = "above_zero", columns = c("fragment_id", "run_id"))
 tmp <- complete.measurements(tmp,
                               measure.id = "fragment_id",
@@ -26,6 +30,11 @@ tmp <- complete.measurements(tmp,
                               flag.name  ="complete")
 data <- combinetmp(data, tmp, "fragment_id")
 
+
+if (TEST)
+{
+    data <- filter.measurements(data, "complete", remove.columns = FALSE)
+}
 
 # Min 3 fragments per each precursor
 tmp = splittmp(data = data, flags = c("above_zero", "complete"),
@@ -44,7 +53,14 @@ data <- select.modifications(data)
 #data <- filter.measurements(data, "complete", "min_frg", "selected_modifications",
 #                            remove.columns = FALSE)
 
-
+if (TEST)
+{
+    data <- filter.measurements(data, "complete", "min_frg", "selected_modifications",
+                                remove.columns = FALSE)
+    data[, n := .N, by = list (fragment_id, tech_id)]
+    data <- data[n == max(data$n)]
+    data[, n := NULL]
+}
 
 
 ###############################################################################
@@ -94,6 +110,32 @@ rm(preclust_data)
 for_selection[, c('intensity', 'mean'):= list(mean, NULL)]
 for_selection <- unique(for_selection[, names(for_selection)[names(for_selection) %in% ms.rep]:= NULL])
 write.file(data= for_selection, path= preclust.mean.ms.path)
+
+if (TEST)
+{
+    set.seed(1234)
+    setkey(for_selection, fragment_id, tech_id)
+    smpli = sample(for_selection[,.N], round(for_selection[,.N]/100))
+    smpl = copy(for_selection [smpli])
+    setkey(smpl, fragment_id, tech_id)
+    for_selection$intensity[smpli] <- 0
+    
+    rec2 <- reconstruct.tech.multiple(for_selection)
+    setkey(rec2, fragment_id, tech_id)
+    rec2l <- rec2[smpli]
+    rec2l[, c('int1', 'r_intensity'):= list(r_intensity, NULL)]
+    setkey(rec2l, fragment_id, tech_id)
+    
+    rec1 <- reconstruct.tech.single(for_selection)
+    setkey(rec1, fragment_id, tech_id)
+    rec1l <- rec1[smpli]
+    rec1l[, c('int1', 'r_intensity'):= list(r_intensity, NULL)]
+    setkey(rec1l, fragment_id, tech_id)
+    
+    res <- smpl[rec1]
+    setkey(res, fragment_id, tech_id)
+    res <- res[rec2]
+}
 
 # Here we try to extrapolate some measurements
 rec2 <- reconstruct.tech.multiple(for_selection)

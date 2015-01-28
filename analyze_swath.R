@@ -74,6 +74,8 @@ if(commandArgs(trailingOnly=FALSE)[1] != "RStudio")
     ms.coef.path <- paste0(resuls.directory, ms.coef.file)
     tech.coef.path <- paste0(resuls.directory, tech.coef.file)
     biosample.coef.path <- paste0(resuls.directory, biosample.coef.file)
+    
+    TEST <- FALSE 
 } else # Run from RStudio
 {
     rm(list= ls())
@@ -113,6 +115,8 @@ if(commandArgs(trailingOnly=FALSE)[1] != "RStudio")
     
     cluster_pdf = TRUE
     not_from_mv = FALSE
+    
+    TEST <- TRUE
 }
 
 source(paste(sep="/", script_dir, "analysis.R"), verbose = T)

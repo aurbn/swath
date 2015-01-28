@@ -52,7 +52,7 @@ filter.measurements <- function(data, ..., logic="&", remove.columns=TRUE)
     n_before = data[,.N]
     
     setkeyv(data, unlist(list(...)))
-    data_ <- data[eval(build.check.expr(...,logic=logic)),]
+    data_ <- data[eval(build.check.expr(list(...),logic=logic)),]
     
     if (remove.columns)
     {

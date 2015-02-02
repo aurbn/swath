@@ -38,8 +38,26 @@ if(commandArgs(trailingOnly=FALSE)[1] != "RStudio")
                            flag=TRUE, default=FALSE)
     parser <- add.argument(parser, "--pdf", help="create pdf with results of clustering",
                            flag=TRUE, default=FALSE)
-    parser <- add.argument(parser, "--hungry", help="hungry mode:consumes lots of memory",
-                           flag=TRUE, default=FALSE)
+    
+    parser <- add.argument(parser, "--ang_min_points", 
+                           help="Min number of point to compute angular distance (S)",
+                           default=3)
+    parser <- add.argument(parser, "--rec_dens_min_points",
+                           help="Min number of points for approx. rec. density (M)",
+                           default=3)
+    parser <- add.argument(parser, "--rec_nonzero_req",
+                           help="Min number of nonzero points of fragment for reconstruction (MS)",
+                           default=3)
+    parser <- add.argument(parser, "--rec_method",
+                           help="Extrapolation method: multiple, single or none",
+                           default="none")
+    parser <- add.argument(parser, "--rec_test",
+                           help="Only test extrapolation procedure",
+                           frag = TRUE, default=FALSE)
+    parser <- add.argument(parser, "--rec_test_prc",
+                           help="Percent of zero points for extrapolation testing",
+                           default=10)
+    
     parser <- parse.args(parser, argv = commandArgs(trailingOnly = TRUE))
     
     data.files <- parser$data_dir
@@ -75,7 +93,15 @@ if(commandArgs(trailingOnly=FALSE)[1] != "RStudio")
     tech.coef.path <- paste0(resuls.directory, tech.coef.file)
     biosample.coef.path <- paste0(resuls.directory, biosample.coef.file)
     
-    TEST <- FALSE 
+    # Extrapolation parameters
+    ANG_MIN_POINTS <- parser$ang_min_points
+    REC_DENS_MIN_POINTS <- parser$rec_dens_min_points
+    REC_NONZERO_REQ <- parser$rec_nonzero_req
+    REC_METHOD <- parser$rec_method
+    
+    REC_TEST <- parser$rec_test
+    REC_TEST_PRC <- parser$rec_test_prc
+    
 } else # Run from RStudio
 {
     rm(list= ls())
@@ -120,10 +146,10 @@ if(commandArgs(trailingOnly=FALSE)[1] != "RStudio")
     ANG_MIN_POINTS = 3
     REC_DENS_MIN_POINTS = 3
     REC_NONZERO_REQ = 3
-    REC_METHOD <- "multiple" # multiple, single or none
+    REC_METHOD <- "single" # multiple, single or none
     
-    REC_TEST <- TRUE
-    REC_TEST_PRC = 4 
+    REC_TEST <- FALSE
+    REC_TEST_PRC = 30 
 }
 
 source(paste(sep="/", script_dir, "analysis.R"), verbose = T)

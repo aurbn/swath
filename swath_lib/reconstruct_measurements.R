@@ -32,7 +32,7 @@ reconstruct.tech.single <- function(data)
         t2 <- data[intensity != 0 & fragment_id == f2, tech_id]
         techs <- intersect(t1,t2)
         #CONSTANT
-        if (length(techs) < 3)
+        if (length(techs) < ANG_MIN_POINTS)
             return(0)
         
         r <- angleDist(data[fragment_id == f1 & tech_id %in% techs, intensity],
@@ -42,11 +42,10 @@ reconstruct.tech.single <- function(data)
         r <- (pi-abs(r))/pi
         r
     }
-    
+
     setkey(data, tech_id, fragment_id)
     recover.tech <- function(fragment.id, tech.id, precursor.id, num)
     {
-        #print(num)
         wt <- data[precursor_id == precursor.id, 
                   list(fragment_id, precursor_id, tech_id, intensity)]
         setkey(wt, fragment_id, tech_id)
@@ -71,9 +70,12 @@ reconstruct.tech.single <- function(data)
 
     data[, nzeros := sum(intensity > 0), by = fragment_id]
     #CONSTANT
-    rec_candidates = unique(data[nzeros > 3 & intensity == 0,list(precursor_id),
-                                 by=list(fragment_id, tech_id)])
+    rec_candidates = unique(data[nzeros > REC_NONZERO_REQ & intensity == 0,
+                                 list(precursor_id), by=list(fragment_id, tech_id)])
     setkey(data, precursor_id, tech_id, fragment_id)
+    
+    if (nrow(rec_candidates) == 0)
+        return(NULL)
     
     rec_candidates[,r_intensity := recover.tech(fragment_id, tech_id, precursor_id, .I),
                    by = list(fragment_id, tech_id)]
@@ -122,7 +124,7 @@ reconstruct.tech.multiple <- function(data)
         wt <- wt[is.finite(est) & est >0]
         
         #Find mode
-        if (length(wt$est) > 3)
+        if (length(wt$est) > REC_DENS_MIN_POINTS)
         {
             dens <- density(wt$est)
             i <- dens$x[which.max(dens$y)]
@@ -138,9 +140,12 @@ reconstruct.tech.multiple <- function(data)
     
     data[, nzeros := sum(intensity > 0), by = fragment_id]
     #CONSTANT
-    rec_candidates = unique(data[nzeros > 3 & intensity == 0,list(precursor_id),
-                                 by=list(fragment_id, tech_id)])
+    rec_candidates = unique(data[nzeros > REC_NONZERO_REQ & intensity == 0,
+                                 list(precursor_id), by=list(fragment_id, tech_id)])
     setkey(data, precursor_id, tech_id, fragment_id)
+    
+    if (nrow(rec_candidates) == 0)
+        return(NULL)
     
     rec_candidates[,r_intensity := recover.tech(fragment_id, tech_id, precursor_id, .I),
                    by=list(fragment_id, tech_id)]

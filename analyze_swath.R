@@ -116,7 +116,14 @@ if(commandArgs(trailingOnly=FALSE)[1] != "RStudio")
     cluster_pdf = TRUE
     not_from_mv = FALSE
     
-    TEST <- TRUE
+    # Extrapolation parameters
+    ANG_MIN_POINTS = 3
+    REC_DENS_MIN_POINTS = 3
+    REC_NONZERO_REQ = 3
+    REC_METHOD <- "multiple" # multiple, single or none
+    
+    REC_TEST <- TRUE
+    REC_TEST_PRC = 4 
 }
 
 source(paste(sep="/", script_dir, "analysis.R"), verbose = T)

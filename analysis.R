@@ -163,6 +163,48 @@ if (REC_METHOD != "none")
     for_selection <- combinetmp.n(for_selection, rec)
     for_selection[!is.na(r_intensity), `:=`(intensity = r_intensity, recovered = TRUE)]
     for_selection[, r_intensity := NULL]
+    
+    data <- combinetmp.n(data, rec)
+    data[!is.na(r_intensity), `:=`(intensity = r_intensity, recovered = TRUE)]
+    data[, r_intensity := NULL]
+    
+    
+    #Re-run filtering
+    data <- threshold.measurements(data,
+                                   measure.id = 'fragment_id', 
+                                   value.var  = 'intensity', 
+                                   threshold  = 0, 
+                                   operator   = '>',
+                                   flag.name  = 'above_zero') 
+    
+    tmp = splittmp(data = data, flags = "above_zero", columns = c("fragment_id", "run_id"))
+    tmp <- complete.measurements(tmp,
+                                 measure.id = "fragment_id",
+                                 rep.id     = "run_id",
+                                 flag.name  ="complete")
+    data <- combinetmp(data, tmp, "fragment_id")
+    
+    tmp = splittmp(data = data, flags = "above_zero", columns = c("fragment_id", "run_id"))
+    tmp <- complete.measurements(tmp,
+                                 measure.id = "fragment_id",
+                                 rep.id     = "run_id",
+                                 flag.name  ="complete")
+    data <- combinetmp(data, tmp, "fragment_id")
+    
+    setkey(coef_run_preclust, tech_id, run_id)
+    preclust_data <- normalize(data= data,
+                               measure.id= 'fragment_id',
+                               value.var= 'intensity', 
+                               rep.id= 'run_id',
+                               group.id= 'tech_id',
+                               coef= coef_run_preclust)
+    
+    for_selection <-  produce.stat(data= preclust_data,
+                                   measure.id= 'fragment_id',
+                                   value.var= 'intensity',
+                                   stat.name= c('mean', 'se_corr', 'cv'),
+                                   group.id= 'tech_id',
+                                   stat.function= list(mean, se_corr, function(x){se_corr(x)/mean(x)}))
 }
 
 setkey(data, precursor_id, fragment_id)

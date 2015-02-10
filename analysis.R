@@ -160,9 +160,9 @@ if (REC_METHOD != "none")
         stop()
     }
     
-    for_selection <- combinetmp.n(for_selection, rec)
-    for_selection[!is.na(r_intensity), `:=`(intensity = r_intensity, recovered = TRUE)]
-    for_selection[, r_intensity := NULL]
+    #for_selection <- combinetmp.n(for_selection, rec)
+    #for_selection[!is.na(r_intensity), `:=`(intensity = r_intensity, recovered = TRUE)]
+    #for_selection[, r_intensity := NULL]
     
     data <- combinetmp.n(data, rec)
     data[!is.na(r_intensity), `:=`(intensity = r_intensity, recovered = TRUE)]

@@ -147,8 +147,12 @@ if (REC_TEST)
 
 # Here we try to extrapolate some measurements
 for_selection[, recovered := FALSE]
+
 if (REC_METHOD != "none")
 {
+    # Clean all flags
+    data[, `:=`(above_zero = NULL, complete = NULL, min_frg = NULL )]
+    
     if (REC_METHOD == "multiple")
     {
         rec <- reconstruct.tech.multiple(for_selection)
@@ -184,12 +188,16 @@ if (REC_METHOD != "none")
                                  flag.name  ="complete")
     data <- combinetmp(data, tmp, "fragment_id")
     
-    tmp = splittmp(data = data, flags = "above_zero", columns = c("fragment_id", "run_id"))
-    tmp <- complete.measurements(tmp,
-                                 measure.id = "fragment_id",
-                                 rep.id     = "run_id",
-                                 flag.name  ="complete")
-    data <- combinetmp(data, tmp, "fragment_id")
+    # Min 3 fragments per each precursor
+    # It doesnt work here because filtered above, fix it
+    tmp = splittmp(data = data, flags = c("above_zero", "complete"),
+                   columns = c("fragment_id", "precursor_id"))
+    tmp <- complete.measurements(tmp, 
+                                 measure.id = 'precursor_id',
+                                 rep.id     = 'fragment_id',
+                                 detect     = 3,
+                                 flag.name  = "min_frg")
+    data <- combinetmp(data, tmp, "precursor_id")
     
     setkey(coef_run_preclust, tech_id, run_id)
     preclust_data <- normalize(data= data,

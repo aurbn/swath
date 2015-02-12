@@ -146,7 +146,7 @@ if(commandArgs(trailingOnly=FALSE)[1] != "RStudio")
     ANG_MIN_POINTS = 3
     REC_DENS_MIN_POINTS = 3
     REC_NONZERO_REQ = 3
-    REC_METHOD <- "single" # multiple, single or none
+    REC_METHOD <- "multiple" # multiple, single or none
     
     REC_TEST <- FALSE
     REC_TEST_PRC = 30 

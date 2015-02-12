@@ -204,7 +204,12 @@ if (REC_METHOD != "none")
                                    value.var= 'intensity',
                                    stat.name= c('mean', 'se_corr', 'cv'),
                                    group.id= 'tech_id',
-                                   stat.function= list(mean, se_corr, function(x){se_corr(x)/mean(x)}))
+                                   stat.function= list(mean, se_corr, 
+                                                       function(x){se_corr(x)/mean(x)}))
+    
+    for_selection[, c('intensity', 'mean'):= list(mean, NULL)]
+    for_selection <- unique(for_selection[, names(for_selection)[names(for_selection) %in% ms.rep]:= NULL])
+    write.file(data= for_selection, path= preclust.mean.ms.path)
 }
 
 setkey(data, precursor_id, fragment_id)

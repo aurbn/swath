@@ -147,6 +147,7 @@ if (REC_TEST)
 
 # Here we try to extrapolate some measurements
 for_selection[, recovered := FALSE]
+data[,recovered := FALSE]
 
 if (REC_METHOD != "none")
 {

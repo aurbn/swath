@@ -79,7 +79,7 @@ reconstruct.tech.single <- function(data)
     
     rec_candidates[,r_intensity := recover.tech(fragment_id, tech_id, precursor_id, .I),
                    by = list(fragment_id, tech_id)]
-    rec_candidates[, list(fragment_id, tech_id, r_intensity)]
+    rec_candidates[r_intensity != 0, list(fragment_id, tech_id, r_intensity)]
 }
 
 reconstruct.tech.multiple <- function(data)
@@ -149,5 +149,5 @@ reconstruct.tech.multiple <- function(data)
     
     rec_candidates[,r_intensity := recover.tech(fragment_id, tech_id, precursor_id, .I),
                    by=list(fragment_id, tech_id)]
-    rec_candidates[,list(fragment_id, tech_id, r_intensity)]
+    rec_candidates[r_intensity != 0, list(fragment_id, tech_id, r_intensity)]
 }

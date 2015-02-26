@@ -53,7 +53,7 @@ if(commandArgs(trailingOnly=FALSE)[1] != "RStudio")
                            default="none")
     parser <- add.argument(parser, "--rec_test",
                            help="Only test extrapolation procedure",
-                           frag = TRUE, default=FALSE)
+                           flag = TRUE, default=FALSE)
     parser <- add.argument(parser, "--rec_test_prc",
                            help="Percent of zero points for extrapolation testing",
                            default=10)

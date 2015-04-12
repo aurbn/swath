@@ -357,7 +357,6 @@ data <- normalize(data= data,
                   value.var= 'intensity',
                   rep.id= 'bio_sample',
                   group.id= NULL, 
-                  output.file= treated.path, 
                   coef= coef_biosample)
 rm(tmp)
 

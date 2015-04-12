@@ -108,7 +108,11 @@ rm(preclust_data)
 
 for_selection[, c('intensity', 'mean'):= list(mean, NULL)]
 for_selection <- unique(for_selection[, names(for_selection)[names(for_selection) %in% ms.rep]:= NULL])
-write.file(data= for_selection, path= preclust.mean.ms.path)
+
+if (write_intres)
+{
+    write.file(data= for_selection, path= preclust.mean.ms.path)
+}
 
 if (REC_TEST)
 {
@@ -218,7 +222,10 @@ if (REC_METHOD != "none")
     
     for_selection[, c('intensity', 'mean'):= list(mean, NULL)]
     for_selection <- unique(for_selection[, names(for_selection)[names(for_selection) %in% ms.rep]:= NULL])
-    write.file(data= for_selection, path= preclust.mean.ms.path)
+    if (write_intres)
+    {
+        write.file(data= for_selection, path= preclust.mean.ms.path)
+    }
 }
 
 setkey(data, precursor_id, fragment_id)
@@ -366,7 +373,10 @@ clustering <- produce.stat(data= data,
 clustering[, c('intensity', 'mean'):= list(mean, NULL)]
 setkey(clustering, fragment_id, tech_id)
 clustering <- unique(clustering[, names(clustering)[names(clustering) %in% ms.rep]:= NULL])
-write.file(data= clustering, path= 'results/clustering.txt')
+if(write_intres)
+{
+    write.file(data= clustering, path= 'results/clustering.txt')
+}
 
 select_outcome <- function(x){
     if(x$complete==FALSE){

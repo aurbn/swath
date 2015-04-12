@@ -38,6 +38,8 @@ if(commandArgs(trailingOnly=FALSE)[1] != "RStudio")
                            flag=TRUE, default=FALSE)
     parser <- add.argument(parser, "--pdf", help="create pdf with results of clustering",
                            flag=TRUE, default=FALSE)
+    parser <- add.argument(parser, "--intres", help="write large intermediate relusls files",
+                           flag=TRUE, default=FALSE)
     
     parser <- add.argument(parser, "--ang_min_points", 
                            help="Min number of point to compute angular distance (S)",
@@ -66,6 +68,7 @@ if(commandArgs(trailingOnly=FALSE)[1] != "RStudio")
     tryptic.file <- parser$tryptic
     resuls.directory <- parser$results_dir
     cluster_pdf <- parser$pdf
+    write_intres <- parser$intres
     not_from_mv <- !parser$mv
     
     #TODO(urban): make it adjustable
@@ -139,17 +142,20 @@ if(commandArgs(trailingOnly=FALSE)[1] != "RStudio")
     tech.coef.path <- paste0(resuls.directory, tech.coef.file)
     biosample.coef.path <- paste0(resuls.directory, biosample.coef.file)
     
-    cluster_pdf = TRUE
-    not_from_mv = FALSE
+    cluster_pdf <- TRUE
+    write_intres <- FALSE
+    
+    not_from_mv <- FALSE
     
     # Extrapolation parameters
-    ANG_MIN_POINTS = 3
-    REC_DENS_MIN_POINTS = 3
-    REC_NONZERO_REQ = 3
+    ANG_MIN_POINTS <- 3
+    REC_DENS_MIN_POINTS <- 3
+    REC_NONZERO_REQ <- 3
     REC_METHOD <- "multiple" # multiple, single or none
     
     REC_TEST <- FALSE
-    REC_TEST_PRC = 30 
+    REC_TEST_PRC <- 30 
 }
+
 
 source(paste(sep="/", script_dir, "analysis.R"), verbose = T)
